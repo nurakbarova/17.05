@@ -1,57 +1,80 @@
 const express = require("express");
 var cors = require('cors')
-const app = express();
+const dotenv = require('dotenv');
 const bodyParser = require("body-parser");
+const mongoose=require('mongoose')
+const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cors())
-const PORT = 8080;
+dotenv.config();
 
-const STUDENT = [
-  {
-    id: 1,
-    name: "Nuray",
-    surname: "Akbarova",
-    GPA: 80,
-    faculty: "tetbiq",
-  },
-];
-//get all student
-app.get("/student", (req, res) => {
-  res.send(STUDENT);
+
+
+//student Schema
+const studentSchema = new mongoose.Schema({
+  name: String,
+  age: Number,
+  surname: String,
+  GPA: Number,
+  faculty:String
+ 
 });
 
-//DELETE
-app.delete("/student", (req, res) => {
-    const id = req.params.id;
-    const student = STUDENT.find((x) => x.id == id);
-    if (student === undefined) {
-      res.status(404).send("student not found");
-    } else {
-      const idx = STUDENT.indexOf(student);
-      STUDENT.splice(idx, 1);
-      res.status(203).send({
-        data: student,
-        message: "artist deleted successfully",
-      });
-    }
-  });
+
+//student Model
+const studentModel = mongoose.model('student', studentSchema);
+
+//MONGO DATABASE CONNECTION
+
+mongoose.connect(process.env.DB_CONNECTION.replace("<password>", process.env.DB_PASSWORD))
+.then(()=>console.log("mongo db connect"))
 
 //post
-app.post("/student",(req, res) => {
-    const { name, id, surname,faculty,GPA } = req.body;
-    console.log(req.body);
-    const newStudent = {
-      id: id,
-      name: name,
-      surname: surname,
-      GPA: GPA,
-      faculty:faculty
-    };
-    STUDENT.push(newStudent);
-    res.status(201).send("created");
-  });
-  
+app.post("/api/student",async(req, res) => {
+  const { name, age, surname,faculty,GPA } = req.body;
+  const newStudent = new studentModel({
+    name: name,
+    surname: surname,
+    faculty: faculty,
+    age: age,
+    GPA: GPA,
+  })
+  await newStudent.save();
+  res.status(201).send("created");
+});
+
+///get student by ID
+app.get("/api/student", async(req, res) => {
+  const id = req.params.id;
+  const student = await studentModel.findById(id);
+  console.log('student found: ',student);
+  if (!student) {
+    res.status(204).send("student not found!");
+  } else {
+    res.status(200).send({
+      data: student,
+      message: "data get success!",
+    });
+  }
+});
+
+//delete student by ID
+app.delete("/api/student", async(req, res) => {
+  const id = req.params.id;
+  const student = await studentModel.findByIdAndDelete(id);
+  if (student === undefined) {
+    res.status(404).send("student not found");
+  } else {
+    res.status(203).send({
+      data: student,
+      message: "student deleted successfully",
+    });
+  }
+});
+
+
+
 //PUT
 app.put("/api/student/:id", (req, res) => {
     const { name, id, surname,faculty,GPA } = req.body;
@@ -75,11 +98,13 @@ app.put("/api/student/:id", (req, res) => {
     }
   });
 
-
+  PORT  = process.env.PORT;
+  app.listen(PORT, () => {
+      console.log(`NODE APP listening on port ${PORT}`);
+  });
 
 
 app.listen(PORT, () => {
   console.log(`we api ${PORT}`);
 });
 
-// 
