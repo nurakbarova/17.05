@@ -71,7 +71,7 @@ app.put("/api/student/:id", (req, res) => {
       if (GPA) {
         existedStudent .GPA = GPA;
       }
-      res.status(200).send(`student: ${existedArtist.name}`);
+      res.status(200).send(`student: ${existedStudent.name}`);
     }
   });
 
